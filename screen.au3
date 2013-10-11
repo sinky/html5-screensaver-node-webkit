@@ -1,0 +1,1 @@
+Run("nw.exe screen.nw", @scriptdir)
