@@ -2,9 +2,21 @@
   "name": "nw-demo",
   "main": "index.html",
   "window": {
+    "title": "Screensaver",
     "frame": false,
     "toolbar": false,
     "fullscreen": true,
-    "always-on-top": true
-  }
+    "always-on-top": true,
+    "show_in_taskbar": false
+  },
+  "maintainers":[ {
+    "name": "Marco Krage",
+    "email": "marco@my-azur.de",
+    "web": "http://my-azur.de"
+  }],
+  "licenses": [
+   {
+       "type": "MIT",
+       "url": "http://marco.mit-license.org"
+   }]
 }
