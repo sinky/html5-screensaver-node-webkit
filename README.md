@@ -4,11 +4,12 @@
 
 ### Components
 
-#### screen.scr
+#### screen.exe
+Rename to screen.scr
 Executable used as Windows Screensaver to launch node-webkit with screensaver app
 
-#### screen.scr
-Project file of screen.scr
+#### screen.au3
+Project file of screen.exe
 
 #### screen.nw/
 Node-Webkit app folder
