@@ -1,70 +1,116 @@
 var debug = false;
 var scr = {
-  imageDir: 'images/', // will be prepend to all images
+  imageDir: 'images/',
   random: true,
-  backstretch: { // see here for available options -> https://github.com/srobbin/jquery-backstretch#options
-    duration: 3000, 
-    fade: 750
+  animation: { 
+    duration: 6000, 
+    fade: 3000
   }
 };
 
-var imageArray;
+var imageArray, slideInterval, playing;
 var mouseDelta = {};
-var playing = true;
+var fs = require('fs');
+var gui = require('nw.gui');  
 
-// Trying to get images vom scr.imageDir with nodejs
-// if it fails some, default images are used. For example when not used in node-webkit
-try{ 
-  // try using nodejs from node-webkit
-  var fs = require('fs');
-  imageArray = fs.readdirSync("./"+scr.imageDir);
-  console.log("Readdir", imageArray);
-  imageArray = imageArray.filter(function(el){ 
-    // filter only images
-    return checkExtension(el, 'jpg,png,gif');
-  });
-  console.log("Readdir filtered", imageArray);
-}catch(e) { 
-  //fallback for use in other browsers than node-webkit and
-  console.log("Readdir Fallback", e);
-  imageArray = [
-    "demo1.jpg"
-    ,"demo4.jpg"
-  ];
+if(debug) {
+  gui.Window.get().showDevTools();
 }
 
-scr.images = imageArray;
-  
+// Trying to get Files vom scr.imageDir with nodejs
+scr.images = fs.readdirSync("./"+scr.imageDir);
+console.log("Readdir", scr.images);
+scr.images = scr.images.filter(function(el){ 
+  // filter only images
+  return checkExtension(el, 'jpg,png,gif');
+});
+console.log("Readdir filtered", scr.images);
+
+
 jQuery(function($){  
-  // Prepend imageDir Path
-  for (var i = 0, l = scr.images.length; i < l; i++) {
-    scr.images[i] = scr.imageDir + scr.images[i];
-  };
-  
-  // Randomize images (if scr.random is true)
-  if(scr.random) {
-    scr.images = shuffle(scr.images);
+  // Add Transition CSS dynamicly
+  if( !$('#transistionCSS').length ) {
+    var $transistionCSS = $('<style />').attr('id', 'transistionCSS').text('.photo { -webkit-transition: opacity ' + scr.animation.fade + 'ms; }')
+    $transistionCSS.appendTo('head');
   }
+
+  // Prepend imageDir Path
+  scr.images = scr.images.map(function(e) {
+    return scr.imageDir + e;
+  });
+   
+  // Randomize images
+  if(scr.random) {
+    console.log('shuffle');
+    shuffle(scr.images);
+  }
+  
+  // Create DOM Elements
+  $(scr.images).each(function(i, elm) {
+    console.log(elm);
+    $('<li/>').addClass('photo').css('background-image', 'url(' + elm + ')').appendTo('#slides');
+  });   
   
   // Set Event Listeners for "exit on input"
   setEvents();
 
-  // event after image has loaded
-  $(window).on("backstretch.after", function (e, instance, index) {
-    console.log("Backstretch.after", index,scr.images);
-    window.focus();
-    // Randomize images after loading last image (if scr.random is true)
-    if(index === instance.images.length - 1 && scr.random) {
-      scr.images = shuffle(scr.images);
-    }
-    //
-  });
-  
-  // Start Backstretch Slideshow
-  $.backstretch(scr.images, scr.backstretch);
-});  // :jQuery
+  // Start Slideshow
+  initSlide();
+});  // jQuery End
 
-// Functions
+
+function initSlide() {
+// BugFix: setTimeout: Erstes Bild wird sonst nicht gefaded
+  setTimeout(function() { 
+    // show first image
+    $('#slides .photo:first-child').addClass('visible current');
+  }, 1);
+  
+  // Start interval
+  startSlide();
+}
+
+function startSlide() {
+  // Stop running Slideshow
+  stopSlide();
+  
+  // Set Interval to variable
+  slideInterval = setInterval(function() {
+    // Each Time call changePhoto
+    changePhoto();
+  }, scr.animation.fade + scr.animation.duration);
+  playing = true;
+}
+
+function stopSlide() {
+  // Stop Intervall
+  clearInterval(slideInterval);
+  playing = false;
+}
+
+function changePhoto(backward) {  
+  // Back z-index:0 // fade out
+  $('#slides .visible.back').removeClass('visible back');
+
+  // Current z-index:1 // stay visible
+  var $current = $('#slides .visible.current');
+  $current.removeClass('current').addClass('back');
+
+  // get the next element
+  if(backward) {
+    var $newPhoto = $current.prev();
+    if( $newPhoto.length == 0 ) {
+      $newPhoto = $('#slides .photo').last();
+    }
+  }else{
+    var $newPhoto = $current.next();
+    if( $newPhoto.length == 0 ) {
+      $newPhoto = $('#slides .photo').first();
+    }
+  }
+  // Next z-Index: 2 // fade in 
+  $newPhoto.addClass('visible current'); 
+}
 
 function setEvents() {
   $(window).mousemove(function(e) {  
@@ -84,22 +130,22 @@ function setEvents() {
   $(window).on("mousedown keydown", function(e){
     console.log("Event: mousedown||keydown", e);
     if(e.keyCode == 37) { // Prev     
-      console.log("Backstretch", "Prev");
-      $.backstretch("prev");
+      console.log("keydown", "prev");
+      changePhoto(true);
       return false;
     }else if(e.keyCode == 39) { // Next
-      console.log("Backstretch", "Next");
-      $.backstretch("next");
+      console.log("keydown", "next");
+      changePhoto();
       return false;
     }else if(e.keyCode == 32) { // Play/Pause
       if(playing){
-        console.log("Backstretch", "Pause");
-        $.backstretch("pause");
+        console.log("keydown", "stop");
+        stopSlide();
         $('#statusPause').removeClass('hide');
         playing = false;
       }else{
-        console.log("Backstretch", "Next");
-        $.backstretch("next");
+        console.log("keydown", "start");
+        startSlide();
         $('#statusPause').addClass('hide');
         playing = true;
       }      
@@ -113,16 +159,24 @@ function setEvents() {
 }
 
 function endScreensaver(e) {
-  console.log("endScreensaver", e);
+  //console.log("endScreensaver", e);
   if(!debug){ // don't close on debug-mode
-    window.close(); // Firefox need about:config dom.allow_scripts_to_close_windows
+    gui.App.quit();
   }
 }
 
-function shuffle(o){ // http://stackoverflow.com/a/6274381
-  for(var j, x, i = o.length; i; j = Math.floor(Math.random() * i), x = o[--i], o[i] = o[j], o[j] = x);
-  return o;
-};
+function shuffle(array) { // http://bost.ocks.org/mike/shuffle/
+  var m = array.length, t, i;
+
+  while (m) {
+    i = Math.floor(Math.random() * m--);
+    t = array[m];
+    array[m] = array[i];
+    array[i] = t;
+  }
+
+  return array;
+}
 
 function checkExtension(str, ext) {
  extArray = ext.split(',');
