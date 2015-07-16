@@ -1,6 +1,11 @@
 # html5-screensaver-node-webkit
 
-> Screensaver made with HTML5, CSS, Javascript and NodeJS driven by [node-webkit](https://github.com/rogerwang/node-webkit)
+> Screensaver made with HTML5, CSS, Javascript and NodeJS driven by [node-webkit](https://github.com/nwjs/nw.js)
+
+### Usage
+Download [node-webkit](http://nwjs.io/)
+
+Run nw.exe /path/to/screen.nw/
 
 ### Components
 
