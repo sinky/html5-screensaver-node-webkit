@@ -12,7 +12,6 @@ var imageArray, slideInterval, playing;
 var mouseDelta = {};
 var fs = require('fs');
 var gui = require('nw.gui');  
-var map;
 
 if(debug) {
   gui.Window.get().showDevTools();
