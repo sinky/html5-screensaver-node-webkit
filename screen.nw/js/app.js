@@ -1,4 +1,4 @@
-var debug = true;
+var debug = false;
 var scr = {
   imageDir: 'images/',
   random: true,
