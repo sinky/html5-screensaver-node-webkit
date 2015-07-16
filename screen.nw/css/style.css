@@ -1,16 +1,15 @@
 * { cursor: none; }
 
-body {
-  background: #000 no-repeat center center fixed; 
-  -webkit-background-size: cover;
-  -moz-background-size: cover;
-  -o-background-size: cover;
-  background-size: cover;      
-}
-
-ul {
+html, body , #slides, .photo {
+  height: 100%;
+  width: 100%;
   margin: 0;
   padding: 0;
+  overflow: hidden;
+}
+
+body {
+  background: #000;
 }
 
 #statusPause {
@@ -38,27 +37,30 @@ ul {
   z-index: 9999;
 }
 
+#slides {
+  text-align: center;
+}
+
 .photo {
   opacity: 0;
   position: absolute;
-  height: 100%;
-  width: 100%;
-  background: #fff no-repeat center center fixed; 
-  -webkit-background-size: cover;
-  -moz-background-size: cover;
-  -o-background-size: cover;
-  background-size: cover;
-  z-index: 0;
+  /* animation CSS in JS */
+}
+
+.photo .bg-blur {
+  position: absolute;
+  z-index: -1;
+  left: 0;
+  top: 0;
+}
+
+.photo.portrait img {
+  /*left: 50%;
+  top: 50%;
+  transform: translate3d(-50%, -50%, 0);*/
+  max-width: 55%;
 }
 
 .visible {
   opacity: 1;
-}
-
-.visible.current {
-  z-index: 2;
-}
-
-.visible.back {
-  z-index: 1;
 }

@@ -1,4 +1,4 @@
-var debug = false;
+var debug = true;
 var scr = {
   imageDir: 'images/',
   random: true,
@@ -12,6 +12,7 @@ var imageArray, slideInterval, playing;
 var mouseDelta = {};
 var fs = require('fs');
 var gui = require('nw.gui');  
+var map;
 
 if(debug) {
   gui.Window.get().showDevTools();
@@ -29,10 +30,7 @@ console.log("Readdir filtered", scr.images);
 
 jQuery(function($){  
   // Add Transition CSS dynamicly
-  if( !$('#transistionCSS').length ) {
-    var $transistionCSS = $('<style />').attr('id', 'transistionCSS').text('.photo { -webkit-transition: opacity ' + scr.animation.fade + 'ms; }')
-    $transistionCSS.appendTo('head');
-  }
+  $('<style />').text('.photo { transition: opacity ' + scr.animation.fade + 'ms cubic-bezier(.3,.8,.5,1); }').appendTo('head');
 
   // Prepend imageDir Path
   scr.images = scr.images.map(function(e) {
@@ -48,23 +46,53 @@ jQuery(function($){
   // Create DOM Elements
   $(scr.images).each(function(i, elm) {
     console.log(elm);
-    $('<li/>').addClass('photo').css('background-image', 'url(' + elm + ')').appendTo('#slides');
-  });   
-  
+    
+    // Wrapper
+    var $photo = $("<div class='photo'>").appendTo('#slides');
+    
+    // Image
+    var $img = $('<img />')
+      .load(function() {
+        // portrait orientation check
+        var $this = $(this);  
+        
+        if($this.width() < $this.height()) {
+          // portrait
+          $this.parent().addClass('portrait');
+          
+          // background blur TODO: onResize
+          $this.parent().backgroundBlur({
+            imageURL : $this.attr('src'),
+            blurAmount : 20,
+            imageClass : 'bg-blur'
+          }); 
+        }else{
+          // landscape
+          // Fit images
+          $this.parent().imagefill({throttle: 1000});
+        }
+        
+      })
+      .attr('src', elm)
+      .appendTo($photo);
+  });
+    
   // Set Event Listeners for "exit on input"
   setEvents();
 
   // Start Slideshow
   initSlide();
+  
 });  // jQuery End
 
 
 function initSlide() {
-// BugFix: setTimeout: Erstes Bild wird sonst nicht gefaded
-  setTimeout(function() { 
-    // show first image
-    $('#slides .photo:first-child').addClass('visible current');
-  }, 1);
+
+  // show first image when loaded
+  $('#slides .photo:first-child img').load(function() {
+    //$(this).parent().addClass('visible');
+    changePhoto();
+  });
   
   // Start interval
   startSlide();
@@ -87,16 +115,14 @@ function stopSlide() {
   clearInterval(slideInterval);
   playing = false;
 }
+function resetSlideInterval() {
+  stopSlide();
+  startSlide();
+}
 
 function changePhoto(backward) {  
-  // Back z-index:0 // fade out
-  $('#slides .visible.back').removeClass('visible back');
-
-  // Current z-index:1 // stay visible
-  var $current = $('#slides .visible.current');
-  $current.removeClass('current').addClass('back');
-
-  // get the next element
+  var $current = $('#slides .visible').removeClass('visible');
+  
   if(backward) {
     var $newPhoto = $current.prev();
     if( $newPhoto.length == 0 ) {
@@ -108,9 +134,28 @@ function changePhoto(backward) {
       $newPhoto = $('#slides .photo').first();
     }
   }
-  // Next z-Index: 2 // fade in 
-  $newPhoto.addClass('visible current'); 
+  
+  // in case of first function call $current was empty
+  if(!$newPhoto.length) {
+    $newPhoto = $('#slides .photo').first();
+  }
+  
+  /*   https://rawgit.com/exif-js/exif-js/master/exif.js
+  EXIF.getData($newPhoto.find('img').get(0), function() {
+    var lat = EXIF.getTag(this, "GPSLatitude");
+    var lng = EXIF.getTag(this, "GPSLongitude");
+
+    var latRef = EXIF.getTag(this, "GPSLatitudeRef") || "N";  
+    var lonRef = EXIF.getTag(this, "GPSLongitudeRef") || "W";  
+    
+    lat = (lat[0] + lat[1]/60 + lat[2]/3600) * (latRef == "N" ? 1 : -1);  
+    lng = (lng[0] + lng[1]/60 + lng[2]/3600) * (lonRef == "W" ? -1 : 1);   
+  });*/
+
+  $newPhoto.addClass('visible'); 
 }
+
+
 
 function setEvents() {
   $(window).mousemove(function(e) {  
@@ -132,10 +177,12 @@ function setEvents() {
     if(e.keyCode == 37) { // Prev     
       console.log("keydown", "prev");
       changePhoto(true);
+      resetSlideInterval();
       return false;
     }else if(e.keyCode == 39) { // Next
       console.log("keydown", "next");
       changePhoto();
+      resetSlideInterval();
       return false;
     }else if(e.keyCode == 32) { // Play/Pause
       if(playing){
@@ -159,7 +206,6 @@ function setEvents() {
 }
 
 function endScreensaver(e) {
-  //console.log("endScreensaver", e);
   if(!debug){ // don't close on debug-mode
     gui.App.quit();
   }
