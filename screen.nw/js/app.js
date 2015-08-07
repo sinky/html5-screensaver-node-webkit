@@ -13,11 +13,16 @@ var mouseDelta = {};
 var fs = require('fs');
 var gui = require('nw.gui');  
 
+// set debug if index.html?debug
+if(location.search.length > 0){
+  debug = true;
+}
+
 if(debug) {
   gui.Window.get().showDevTools();
 }
 
-// Trying to get Files vom scr.imageDir with nodejs
+// Try to get files vom scr.imageDir with nodejs
 scr.images = fs.readdirSync("./"+scr.imageDir);
 console.log("Readdir", scr.images);
 scr.images = scr.images.filter(function(el){ 
@@ -51,12 +56,12 @@ jQuery(function($){
     
     // Image
     var $img = $('<img />')
-      .load(function() {
-        // portrait orientation check
-        var $this = $(this);  
+      .load(function() {        
+        var $this = $(this); 
         
+        // portrait orientation check
         if($this.width() < $this.height()) {
-          // portrait
+          // is portrait
           $this.parent().addClass('portrait');
           
           // background blur TODO: onResize
@@ -66,10 +71,30 @@ jQuery(function($){
             imageClass : 'bg-blur'
           }); 
         }else{
-          // landscape
+          // is landscape
           // Fit images
           $this.parent().imagefill({throttle: 1000});
         }
+        
+        // Exif Data
+        try{
+          EXIF.getData($this.get(0), function() {
+          
+            var exif = EXIF.getAllTags(this);
+            
+            var data = [];
+            data.push(exif.Make + " " + exif.Model);
+            
+            data.push(exif.FocalLength.numerator / exif.FocalLength.denominator + "mm");
+            
+            data.push("f/" + exif.FNumber.numerator / exif.FNumber.denominator);
+            data.push(exif.ExposureTime.numerator + "/" + exif.ExposureTime.denominator + "s");
+
+            $('<div />').addClass('exif').html(data.join(' - ')).appendTo($this.parent());
+            console.log($this.attr('src'), data.join(' - '));
+
+          });
+        }catch(e){}
         
       })
       .attr('src', elm)
@@ -89,7 +114,6 @@ function initSlide() {
 
   // show first image when loaded
   $('#slides .photo:first-child img').load(function() {
-    //$(this).parent().addClass('visible');
     changePhoto();
   });
   
@@ -103,7 +127,6 @@ function startSlide() {
   
   // Set Interval to variable
   slideInterval = setInterval(function() {
-    // Each Time call changePhoto
     changePhoto();
   }, scr.animation.fade + scr.animation.duration);
   playing = true;
@@ -115,6 +138,7 @@ function stopSlide() {
   playing = false;
 }
 function resetSlideInterval() {
+  // reset Intervall
   stopSlide();
   startSlide();
 }
@@ -134,7 +158,7 @@ function changePhoto(backward) {
     }
   }
   
-  // in case of first function call $current was empty
+  // in case of first time function call $current was empty
   if(!$newPhoto.length) {
     $newPhoto = $('#slides .photo').first();
   }
