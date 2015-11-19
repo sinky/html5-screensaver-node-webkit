@@ -1,5 +1,5 @@
 {
-  "name": "HTML5 Screensaver",
+  "name": "nw-demo",
   "main": "index.html",
   "window": {
     "title": "Screensaver",

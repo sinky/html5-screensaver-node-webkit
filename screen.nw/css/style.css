@@ -75,3 +75,8 @@ body {
 .visible {
   opacity: 1;
 }
+
+.fadeIn {
+  opacity: 1;
+  z-index: 10;
+}
