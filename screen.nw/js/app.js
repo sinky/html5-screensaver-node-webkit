@@ -154,7 +154,11 @@ function resetSlideInterval() {
 }
 
 function changePhoto(backward) {
+<<<<<<< HEAD
   var $current = $('#slides .visible').removeClass('visible');
+=======
+  var $current = $('#slides .visible');
+>>>>>>> origin/master
 
   if(backward) {
     var $newPhoto = $current.prev();
@@ -174,6 +178,13 @@ function changePhoto(backward) {
   }
 
   $newPhoto.addClass('visible');
+<<<<<<< HEAD
+=======
+  
+  setTimeout(function() {
+    $current.removeClass('visible');
+  }, 1000);
+>>>>>>> origin/master
 }
 
 
