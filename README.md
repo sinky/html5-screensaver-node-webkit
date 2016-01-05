@@ -18,3 +18,7 @@ Project file of screen.exe
 
 #### screen.nw/
 Node-Webkit app folder
+
+
+## License
+MIT http://marco.mit-license.org/
