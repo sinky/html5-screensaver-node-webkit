@@ -14,7 +14,7 @@ Rename to screen.scr
 Executable used as Windows Screensaver to launch node-webkit with screensaver app
 
 #### screen.au3
-Project file of screen.exe
+AutoIt Project file of screen.exe www.autoitscript.com
 
 #### screen.nw/
 Node-Webkit app folder
