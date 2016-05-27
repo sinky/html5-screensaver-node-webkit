@@ -1,11 +1,9 @@
 {
-  "name": "nw-demo",
+  "name": "nw-screensaver",
   "main": "index.html",
   "window": {
     "title": "Screensaver",
-    "frame": false,
-    "toolbar": false,
-    "fullscreen": true,
+    "kiosk": true,
     "always-on-top": true,
     "show_in_taskbar": false
   },

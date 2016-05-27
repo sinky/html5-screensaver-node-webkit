@@ -8,27 +8,27 @@ var scr = {
   }
 };
 
-var imageArray, slideInterval, playing;
+var slideInterval, playing;
 var mouseDelta = {};
 var fs = require('fs');
-var gui = require('nw.gui');
+var win = nw.Window.get();
+var app = nw.App;
 
-// set debug if index.html?debug
-if(location.search.length > 0){
+// debug
+if(app.fullArgv.indexOf('--debug') != -1){
   debug = true;
-}
-
-if(debug) {
-  gui.Window.get().showDevTools();
+  win.leaveKioskMode();
+  win.showDevTools();
+  console.log('win', win);
 }
 
 // Try to get files vom scr.imageDir with nodejs
 try {
   scr.images = fs.readdirSync("./"+scr.imageDir);
   console.log("Readdir", scr.images);
+  // filter only images
   scr.images = scr.images.filter(function(el){
-    // filter only images
-    return checkExtension(el, 'jpg,png,gif');
+    return checkExtension(el, 'jpg,jpeg,png,gif');
   });
   console.log("Readdir filtered", scr.images);
 }catch(e) {
@@ -54,15 +54,25 @@ jQuery(function($){
     shuffle(scr.images);
   }
 
-  // Create DOM Elements
-  $(scr.images).each(function(i, elm) {
-    console.log(elm);
+  // Clone Array
+  var images = scr.images.slice();
+
+  // Create DOM Elements, one after the other
+  // processImage calls itself on image load event
+  var processImage = function() {
+    if(!images.length) { return false; }
+
+    var imgPath = images.shift();
+
+    //console.log(imgPath);
 
     // Wrapper
-    var $photo = $("<div class='photo'>").appendTo('#slides');
+    var $photo = $("<div/>").addClass('photo').appendTo('#slides');
 
     // Image
-    var $img = $('<img />')
+    var $img = $('<img/>')
+      .attr('src', imgPath)
+      .appendTo($photo)
       .load(function() {
         var $this = $(this);
 
@@ -71,7 +81,8 @@ jQuery(function($){
           // is portrait
           $this.parent().addClass('portrait');
 
-          // background blur TODO: onResize
+          // background blur
+          // TODO: add onResize
           $this.parent().backgroundBlur({
             imageURL : $this.attr('src'),
             blurAmount : 20,
@@ -79,8 +90,8 @@ jQuery(function($){
           });
         }else{
           // is landscape
-          // Fit images
-          $this.parent().imagefill({throttle: 1000});
+          // Fit image
+          $this.parent().imagefill({throttle: 200});
         }
 
         // Exif Data
@@ -88,6 +99,8 @@ jQuery(function($){
           EXIF.getData($this.get(0), function() {
 
             var exif = EXIF.getAllTags(this);
+
+            //console.log(exif);
 
             var data = [];
             data.push(exif.Make + " " + exif.Model);
@@ -97,16 +110,24 @@ jQuery(function($){
             data.push("f/" + exif.FNumber.numerator / exif.FNumber.denominator);
             data.push(exif.ExposureTime.numerator + "/" + exif.ExposureTime.denominator + "s");
 
+            if(typeof exif.ImageDescription != 'undefined'){
+              if(exif.ImageDescription.trim()) {
+                data.push(exif.ImageDescription);
+              }
+            }
+
             $('<div />').addClass('exif').html(data.join(' - ')).appendTo($this.parent());
-            console.log($this.attr('src'), data.join(' - '));
 
           });
-        }catch(e){}
+        }catch(e){
+          console.error('EXIF', e);
+        }
 
-      })
-      .attr('src', elm)
-      .appendTo($photo);
-  });
+        // Load Next Image
+        processImage();
+      });
+  };
+  processImage();
 
   // Set Event Listeners for "exit on input"
   setEvents();
@@ -118,7 +139,6 @@ jQuery(function($){
 
 
 function initSlide() {
-
   // show first image when loaded
   $('#slides .photo:first-child img').load(function() {
     changePhoto();
@@ -155,25 +175,27 @@ function resetSlideInterval() {
 
 function changePhoto(backward) {
   var $current = $('#slides .visible').removeClass('visible');
+  var $nextPhoto;
 
+  // get the next image acccording direction
   if(backward) {
-    var $newPhoto = $current.prev();
-    if( $newPhoto.length == 0 ) {
-      $newPhoto = $('#slides .photo').last();
+    $nextPhoto = $current.prev();
+    if( $nextPhoto.length === 0 ) {
+      $nextPhoto = $('#slides .photo').last();
     }
   }else{
-    var $newPhoto = $current.next();
-    if( $newPhoto.length == 0 ) {
-      $newPhoto = $('#slides .photo').first();
+    $nextPhoto = $current.next();
+    if( $nextPhoto.length === 0 ) {
+      $nextPhoto = $('#slides .photo').first();
     }
   }
 
-  // in case of first time function call $current was empty
-  if(!$newPhoto.length) {
-    $newPhoto = $('#slides .photo').first();
+  // in case of first call $current is empty
+  if(!$nextPhoto.length) {
+    $nextPhoto = $('#slides .photo').first();
   }
 
-  $newPhoto.addClass('visible');
+  $nextPhoto.addClass('visible');
 }
 
 
@@ -186,8 +208,8 @@ function setEvents() {
       return false;
     }
 
-    deltax = Math.abs(e.pageX - mouseDelta.x);
-    deltay = Math.abs(e.pageY - mouseDelta.y);
+    var deltax = Math.abs(e.pageX - mouseDelta.x);
+    var deltay = Math.abs(e.pageY - mouseDelta.y);
     if(deltax > 20 || deltay > 20){
       endScreensaver(e);
     }
@@ -228,7 +250,7 @@ function setEvents() {
 
 function endScreensaver(e) {
   if(!debug){ // don't close on debug-mode
-    gui.App.quit();
+    win.close();
   }
 }
 
@@ -246,12 +268,12 @@ function shuffle(array) { // http://bost.ocks.org/mike/shuffle/
 }
 
 function checkExtension(str, ext) {
- extArray = ext.split(',');
+ var extArray = ext.split(',');
 
- for(i=0; i < extArray.length; i++) {
+ for(var i=0; i < extArray.length; i++) {
   if(str.toLowerCase().split('.').pop() == extArray[i]) {
     return true;
   }
  }
  return false;
-};
+}
