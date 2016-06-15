@@ -1,1 +1,1 @@
-Run("nw.exe screen.nw", @scriptdir)
+Run("nwjs\nw.exe screen.nw", @scriptdir)
