@@ -33,7 +33,7 @@ var isNodeWebkit = (function() {
 if(isNodeWebkit) {
   var win = nw.Window.get();
   var app = nw.App;
-    
+
   // debug
   if(app.fullArgv.indexOf('--debug') != -1){
     debug = true;
@@ -51,12 +51,12 @@ if(isNodeWebkit) {
     scr.images = scr.images.filter(function(el){
       return checkExtension(el, 'jpg,jpeg,png,gif');
     });
-    
+
     // Prepend imageDir Path
     scr.images = scr.images.map(function(e) {
       return scr.imageDir + e;
     });
-    
+
     console.log("Readdir filtered", scr.images);
   }catch(e) {
     alert(e);
@@ -87,11 +87,6 @@ jQuery(function($){
   if(localStorage.getItem("screensaver.hideMap") == "true") {
     $('<style />').text('.photo .map { display: none; }').appendTo('head');
   }
-
-  // Prepend imageDir Path
-  scr.images = scr.images.map(function(e) {
-    return scr.imageDir + e;
-  });
 
   // Randomize images
   if(scr.random) {
