@@ -7,7 +7,7 @@ var scr = {
     fade: 3000
   }
 };
-
+// test
 var slideInterval, playing;
 var mouseDelta = {};
 var fs = require('fs');
