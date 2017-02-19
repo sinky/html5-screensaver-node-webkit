@@ -5,34 +5,71 @@ var scr = {
   animation: {
     duration: 6000,
     fade: 3000
+  },
+  portraitBackground: 'css3blur', // Options: svgblur, css3blur or gradient
+  exif: {
+    showData: true,
+    showMap: false
   }
 };
-// test
+var googleStaticMapsURL = 'http://maps.googleapis.com/maps/api/staticmap?center={{center}}&zoom=2&scale=1&size=350x150&maptype=roadmap&format=png&visual_refresh=true&markers=size:tiny%7Ccolor:0x019cef%7Clabel:%7C{{center}}';
+
 var slideInterval, playing;
 var mouseDelta = {};
-var fs = require('fs');
-var win = nw.Window.get();
-var app = nw.App;
 
-// debug
-if(app.fullArgv.indexOf('--debug') != -1){
-  debug = true;
-  win.leaveKioskMode();
-  win.showDevTools();
-  console.log('win', win);
-}
+var isNode = (typeof process !== "undefined" && typeof require !== "undefined");
+var isNodeWebkit = (function() {
+  if(isNode) {
+    try {
+      return (typeof require('nw.gui') !== "undefined");
+    } catch(e) {
+      return false;
+    }
+  }else{
+    return false;
+  }
+})();
 
-// Try to get files vom scr.imageDir with nodejs
-try {
-  scr.images = fs.readdirSync("./"+scr.imageDir);
-  console.log("Readdir", scr.images);
-  // filter only images
-  scr.images = scr.images.filter(function(el){
-    return checkExtension(el, 'jpg,jpeg,png,gif');
-  });
-  console.log("Readdir filtered", scr.images);
-}catch(e) {
-  alert(e);
+if(isNodeWebkit) {
+  var win = nw.Window.get();
+  var app = nw.App;
+    
+  // debug
+  if(app.fullArgv.indexOf('--debug') != -1){
+    debug = true;
+    win.leaveKioskMode();
+    win.showDevTools();
+    console.log('win', win);
+  }
+
+  // Try to get files vom scr.imageDir with nodejs
+  try {
+    var fs = require('fs');
+    scr.images = fs.readdirSync("./"+scr.imageDir);
+    console.log("Readdir", scr.images);
+    // filter only images
+    scr.images = scr.images.filter(function(el){
+      return checkExtension(el, 'jpg,jpeg,png,gif');
+    });
+    
+    // Prepend imageDir Path
+    scr.images = scr.images.map(function(e) {
+      return scr.imageDir + e;
+    });
+    
+    console.log("Readdir filtered", scr.images);
+  }catch(e) {
+    alert(e);
+  }
+}else{
+  // no NWSJ using demo images
+  scr.images = [
+    'images/demo1.jpg',
+    'images/demo2.jpg',
+    'images/demo3.jpg',
+    'images/demo4.jpg',
+    'images/demo5.jpg'
+  ];
 }
 
 if(scr.images.length < 1) {
@@ -42,6 +79,14 @@ if(scr.images.length < 1) {
 jQuery(function($){
   // Add Transition CSS dynamicly
   $('<style />').text('.photo { transition: opacity ' + scr.animation.fade + 'ms cubic-bezier(.3,.8,.5,1); }').appendTo('head');
+
+  // Hide exif or map if localstorage setting is (String)true
+  if(localStorage.getItem("screensaver.hideExif") == "true") {
+    $('<style />').text('.photo .exif { display: none; }').appendTo('head');
+  }
+  if(localStorage.getItem("screensaver.hideMap") == "true") {
+    $('<style />').text('.photo .map { display: none; }').appendTo('head');
+  }
 
   // Prepend imageDir Path
   scr.images = scr.images.map(function(e) {
@@ -68,26 +113,36 @@ jQuery(function($){
 
     // Wrapper
     var $photo = $("<div/>").addClass('photo').appendTo('#slides');
+    var $image = $("<div/>").addClass('image').appendTo($photo);
 
     // Image
     var $img = $('<img/>')
       .attr('src', imgPath)
-      .appendTo($photo)
-      .load(function() {
+      .appendTo($image)
+      .on('load', function() {
         var $this = $(this);
 
         // portrait orientation check
         if($this.width() < $this.height()) {
           // is portrait
-          $this.parent().addClass('portrait');
+          $this.parents('.photo').addClass('portrait');
 
-          // background blur
-          // TODO: add onResize
-          $this.parent().backgroundBlur({
-            imageURL : $this.attr('src'),
-            blurAmount : 20,
-            imageClass : 'bg-blur'
-          });
+          if(scr.portraitBackground == 'css3blur') {
+            // background css3 blur
+            $("<div/>").addClass('bg-css3blur').css('background-image', 'url('+imgPath+')').appendTo($this.parents('.photo'));
+          }else if(scr.portraitBackground == 'svgblur') {
+            // background svg blur
+            // TODO: add onResize
+            $this.parents('.photo').backgroundBlur({
+              imageURL : $this.attr('src'),
+              blurAmount : 20,
+              imageClass : 'bg-svgblur'
+            });
+          }else if(scr.portraitBackground == 'gradient') {
+            // background gradient
+            Grade($this.parents('.photo').get(0));
+          }
+
         }else{
           // is landscape
           // Fit image
@@ -95,32 +150,50 @@ jQuery(function($){
         }
 
         // Exif Data
-        try{
-          EXIF.getData($this.get(0), function() {
+        if(scr.exif.showData || exif.showMap) {
+          try{
+            EXIF.getData($this.get(0), function() {
 
-            var exif = EXIF.getAllTags(this);
+              var exif = EXIF.getAllTags(this);
+              var lat = exif.GPSLatitude;
+              var lon = exif.GPSLongitude;
 
-            //console.log(exif);
+              console.log(exif);
 
-            var data = [];
-            data.push(exif.Make + " " + exif.Model);
+              // show exif data
+              if(scr.exif.showData) {
+                var data = [];
+                data.push(exif.Make + " " + exif.Model);
 
-            data.push(exif.FocalLength.numerator / exif.FocalLength.denominator + "mm");
+                data.push(exif.FocalLength.numerator / exif.FocalLength.denominator + "mm");
 
-            data.push("f/" + exif.FNumber.numerator / exif.FNumber.denominator);
-            data.push(exif.ExposureTime.numerator + "/" + exif.ExposureTime.denominator + "s");
+                data.push("f/" + exif.FNumber.numerator / exif.FNumber.denominator);
+                data.push(exif.ExposureTime.numerator + "/" + exif.ExposureTime.denominator + "s");
+                data.push("ISO " + exif.ISOSpeedRatings);
 
-            if(typeof exif.ImageDescription != 'undefined'){
-              if(exif.ImageDescription.trim()) {
-                data.push(exif.ImageDescription);
+                if(typeof exif.ImageDescription != 'undefined'){
+                  if(exif.ImageDescription.trim()) {
+                    data.push(exif.ImageDescription.trim());
+                  }
+                }
+
+                $('<div />').addClass('exif').html(data.join(' - ')).appendTo($this.parents('.photo'));
               }
-            }
 
-            $('<div />').addClass('exif').html(data.join(' - ')).appendTo($this.parent());
+              // show exif Map
+              if(scr.exif.showMap && exif['GPSLatitude'] && exif['GPSLongitude']) {
+                var lat = to_decimal(exif['GPSLatitude'][0], exif['GPSLatitude'][1], exif['GPSLatitude'][2], exif['GPSLatitudeRef']);
+                var lng = to_decimal(exif['GPSLongitude'][0], exif['GPSLongitude'][1], exif['GPSLongitude'][2], exif['GPSLongitudeRef']);
+                //console.log(imgPath, lat +','+lng);
 
-          });
-        }catch(e){
-          console.error('EXIF', e);
+                var mapImgURL = googleStaticMapsURL.replace(/{{center}}/g, lat + ',' + lng);
+                var $mapImg = $('<img />').attr('src', mapImgURL)
+                $('<div />').addClass('map').append($mapImg).appendTo($this.parents('.photo'));
+              }
+            });
+          }catch(e){
+            console.error('EXIF', e);
+          }
         }
 
         // Load Next Image
@@ -140,7 +213,7 @@ jQuery(function($){
 
 function initSlide() {
   // show first image when loaded
-  $('#slides .photo:first-child img').load(function() {
+  $('#slides .photo:first-child img').on('load', function() {
     changePhoto();
   });
 
@@ -240,6 +313,12 @@ function setEvents() {
         playing = true;
       }
       return false;
+    }else if(e.keyCode == 69) { // e
+      $('.photo .exif').fadeToggle();
+      localStorage.setItem("screensaver.hideExif", $('.photo .exif').is(":not(:visible)"));
+    }else if(e.keyCode == 77) { // m
+      $('.photo .map').fadeToggle();
+      localStorage.setItem("screensaver.hideMap", $('.photo .map').is(":not(:visible)"));
     }
     if(!debug){
       e.preventDefault();
@@ -249,7 +328,7 @@ function setEvents() {
 }
 
 function endScreensaver(e) {
-  if(!debug){ // don't close on debug-mode
+  if(isNodeWebkit && !debug){ // don't close on debug-mode
     win.close();
   }
 }
@@ -276,4 +355,9 @@ function checkExtension(str, ext) {
   }
  }
  return false;
+}
+
+function to_decimal($deg, $min, $sec, $hem){
+  $d = $deg + (($min/60) + ($sec/3600));
+  return ($hem =='S' || $hem=='W') ?  $d*=-1 : $d;
 }

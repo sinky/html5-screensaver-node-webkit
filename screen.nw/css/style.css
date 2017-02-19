@@ -1,6 +1,6 @@
 * { cursor: none; }
 
-html, body , #slides, .photo {
+html, body , #slides, .photo, .image {
   height: 100%;
   width: 100%;
   margin: 0;
@@ -47,18 +47,29 @@ body {
   /* CSS animation defined in JS */
 }
 
-.photo .bg-blur {
-  opacity: 0.5;
+.photo .bg-css3blur,
+.photo .bg-svgblur {
   position: absolute;
-  z-index: -1;
-  left: 0;
   top: 0;
+  left: 0;
+  z-index: -1;
 }
 
-.photo.portrait img {
+.photo .bg-css3blur {
+  background-size: cover;
+  background-position: 50% 50%;
+  filter: blur(20px) opacity(0.5);
   height: 100%;
-  /* box-shadow: 0 0 20px -5px; */
-  transform: translate3d(0, 0, 0);
+  width: 100%;
+  transform: scale(1.05);
+}
+
+.photo .bg-svgblur {
+  filter: opacity(0.5);
+}
+
+.photo.portrait .image img {
+  height: 100%;
 }
 
 .photo .exif {
@@ -70,6 +81,17 @@ body {
   padding: 5px 8px;
   opacity: .5;
   font-size: 80%;
+}
+
+.photo .map {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  z-index: 100;
+}
+
+.photo .map img {
+  vertical-align: middle;
 }
 
 .visible {

@@ -97,7 +97,7 @@
       if (containersH !== checkH || containersW !== checkW) {
         fitImages();
       }
-      setTimeout(checkSizeChange, settings.throttle);
+      requestAnimationFrame(checkSizeChange);
     }
     
     return this;
