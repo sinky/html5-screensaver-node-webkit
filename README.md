@@ -15,7 +15,7 @@ Folder structure:
 
 
 ## Windows Screensaver
-Use "runscreensaver" as an Windows Screensaver. "runscreensaver" takes any command and runs it as a screensaver.
+Use "runscreensaver" as an Windows Screensaver. "runscreensaver" can be configured to run a command as screensaver.
 https://github.com/sinky/runscreensaver
 
 
