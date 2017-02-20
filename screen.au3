@@ -1,1 +1,0 @@
-Run("nwjs\nw.exe screen.nw", @scriptdir)
