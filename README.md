@@ -2,7 +2,7 @@
 
 > Screensaver made with HTML5, CSS, Javascript and NodeJS driven by [node-webkit](https://github.com/nwjs/nw.js)
 
-Demo: http://sinky.github.io/html5-screensaver-node-webkit/screen.nw/
+Demo: http://sinky.github.io/html5-screensaver-node-webkit/demo.html
 
 ### Usage
 Download [node-webkit](http://nwjs.io/)
