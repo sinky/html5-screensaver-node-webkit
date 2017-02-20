@@ -43,10 +43,21 @@ body {
   border-radius: 2px 2px 5px 5px;
 }
 
-.monitor .browser {
+.monitor .screen {
+  position: relative;
   width: 100%;
-  height: 600px;
+  height: 0;
+  padding-bottom: 51%;
+}
+
+.monitor .browser {
   border: 0;
+  
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  left: 0;
+  top: 0;
 }
   </style>
 </head>
@@ -54,7 +65,9 @@ body {
 
 <div class="monitor">
   <div class="panel">
-    <iframe class="browser" src="./screen.nw/index.html"></iframe>
+    <div class="screen">
+      <iframe class="browser" src="./screen.nw/index.html"></iframe>
+    </div>
   </div>
   <div class="neck"></div>
 <div class="foot"></div>
