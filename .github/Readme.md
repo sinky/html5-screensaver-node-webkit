@@ -14,7 +14,7 @@ This GitHub repository exists **only as a push mirror** and is automatically syn
 ## New canonical repository
 
 👉 **Codeberg (authoritative source):**  
-https://codeberg.org/<namespace>/<repository>
+https://codeberg.org/sinky/html5-screensaver-node-webkit
 
 Please update your bookmarks, remotes, and CI references accordingly.
 
